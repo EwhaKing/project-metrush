@@ -1,0 +1,38 @@
+# ==============================================================
+# .gitattributes  (Project Metrush)
+# 언리얼 바이너리 에셋을 Git LFS로 처리한다.
+# ★ 반드시 .uasset/.umap 을 커밋하기 "전에" 이 파일이 레포에 있어야 한다.
+#   (나중에 추가하면 이미 올라간 에셋은 LFS로 안 잡힘)
+# ==============================================================
+
+# 텍스트 파일 줄바꿈 자동 정규화
+* text=auto
+
+# --- 언리얼 핵심 바이너리 (필수) ---
+*.uasset filter=lfs diff=lfs merge=lfs -text
+*.umap   filter=lfs diff=lfs merge=lfs -text
+
+# --- 3D / 모델 ---
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.3ds filter=lfs diff=lfs merge=lfs -text
+
+# --- 이미지 / 텍스처 ---
+*.png  filter=lfs diff=lfs merge=lfs -text
+*.jpg  filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tga  filter=lfs diff=lfs merge=lfs -text
+*.bmp  filter=lfs diff=lfs merge=lfs -text
+*.psd  filter=lfs diff=lfs merge=lfs -text
+*.exr  filter=lfs diff=lfs merge=lfs -text
+*.hdr  filter=lfs diff=lfs merge=lfs -text
+
+# --- 사운드 ---
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+
+# --- 폰트 / 기타 미디어 ---
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
