@@ -4,6 +4,8 @@
 Package/
 .claude/
 
+# 깃 훅 테스트
+
 # Compiled Object files
 *.slo
 *.lo
