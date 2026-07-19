@@ -18,7 +18,8 @@ public class ProjectMetrush : ModuleRules
 			"AIModule",
 			"NavigationSystem",
 			"UMG",
-			"StateTreeModule"
+			"StateTreeModule",
+			"GameplayTasks"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
