@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Character/Enemy/PMEnemy.h"
+#include "Kismet/GameplayStatics.h"
 
 APMProjectile::APMProjectile()
 {
@@ -53,8 +54,9 @@ void APMProjectile::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponen
 
     if (Cast<APawn>(OtherActor) != nullptr)
     {
-        // 추후 조정필요 : 플레이어 피격/투사체 패링 처리
-        UE_LOG(LogTemp, Warning, TEXT("Projectile Hit Player"));
+        // 피해 전달. 무적/저스트 판단은 플레이어 TakeDamage가 일괄 처리
+        UGameplayStatics::ApplyDamage(OtherActor, Damage,
+            GetInstigatorController(), this, nullptr);
         Destroy();
     }
 }

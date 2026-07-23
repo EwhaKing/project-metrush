@@ -42,4 +42,11 @@ protected:
     /** 직선 비행 이동 컴포넌트 */
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
+
+    // Combat Variable
+protected:
+    /** 플레이어 명중 시 피해량 */
+    UPROPERTY(EditDefaultsOnly, Category = "Variable|Combat")
+    float Damage = 10.f;
+
 };

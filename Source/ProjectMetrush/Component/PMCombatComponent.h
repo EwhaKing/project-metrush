@@ -79,16 +79,27 @@ public:
 	/** 이동 입력을 받아도 되는 상태인지 반환합니다. */
 	bool CanMove() const { return CombatState == EPMCombatState::None; }
 
-	/** 현재 무적 상태인지 반환합니다. (추후 피격 판정에서 사용) */
-	bool IsInvincible() const { return bIsInvincible; }
+	/** 현재 무적 상태인지 반환합니다. (회피 무적 + 피격 후 무적) */
+	bool IsInvincible() const { return bIsInvincible || HitInvincibleRemaining > 0.f; }
 
 	/** 현재 전투 상태를 반환합니다. */
 	EPMCombatState GetCombatState() const { return CombatState; }
+
+	/** 저스트 회피 성공을 접수합니다. 회피 계열 증강(A013/A014/A016)이 여기서 발동합니다. */
+	void NotifyJustDodge();
+
+	/** 피격 처리를 시작합니다. 경직 상태 진입과 피격 후 무적을 포함합니다. 기획서 10장 */
+	void EnterHit(float StaggerDuration);
+
+	/** 사망 상태로 전환합니다. 모든 행동이 차단됩니다. */
+	void EnterDead();
 
 private:
 	void StartAttack(int32 NewComboIndex, const FVector& FacingDirection);
 	void UpdateAttack(float DeltaTime);
 	void EndAttack();
+	/** 주변 적을 감속시킵니다. A013 완벽 회피. */
+	void ApplyEnemySlow(float SlowAmount);
 
 	/** 현재 타의 부채꼴 범위 안 캐릭터를 찾아 명중 처리합니다. 기획서 7.3 */
 	void PerformAttackTrace();
@@ -97,6 +108,7 @@ private:
 	void StartDodge(const FVector& DodgeDirection);
 	void UpdateDodge(float DeltaTime);
 	void EndDodge();
+	void UpdateHit(float DeltaTime);
 
 	// Attack Variable
 protected:
@@ -129,6 +141,46 @@ protected:
 	/** 연속 회피 소진 후 쿨타임(초)입니다. 기획서 5.3 */
 	UPROPERTY(EditDefaultsOnly, Category = "변수|회피")
 	float DodgeCooldown = 0.6f;
+
+	// Hit Variable
+protected:
+	/** 소피격 경직 시간(초)입니다. 기획서 10.1 */
+	UPROPERTY(EditDefaultsOnly, Category = "변수|피격")
+	float HitStaggerDuration = 0.1f;
+
+	/** 피격 직후 무적 시간(초)입니다. 연속 피격 즉사 방지. 기획서 10.3 */
+	UPROPERTY(EditDefaultsOnly, Category = "변수|피격")
+	float HitInvincibleDuration = 0.3f;
+
+	// Augment Variable
+protected:
+	/** A013 완벽 회피의 적 감속 지속 시간(초)입니다. 기획서: 1단계 1초 (단계별 시간 차이는 추후) */
+	UPROPERTY(EditDefaultsOnly, Category = "변수|증강")
+	float EnemySlowDuration = 1.f;
+
+	/** A014 공격적 회피의 강화 유효 시간(초)입니다. 기획서: 저스트 후 3초 내 공격 */
+	UPROPERTY(EditDefaultsOnly, Category = "변수|증강")
+	float JustDodgeBuffWindow = 3.f;
+
+private:
+	/** A014: 저스트 회피 후 첫 공격 강화가 대기 중인가 */
+	bool bJustDodgeAttackReady = false;
+
+	/** A014: 강화 대기가 만료되는 시각 */
+	float JustDodgeBuffExpireTime = 0.f;
+
+	/** A013: 현재 감속이 풀리는 시각 (S005 시너지 판정용) */
+	float EnemySlowEndTime = 0.f;
+
+	/** A013: 감속 해제 타이머 */
+	FTimerHandle EnemySlowTimerHandle;
+
+private:
+	/** 현재 피격의 경직 길이 */
+	float CurrentHitStagger = 0.1f;
+
+	/** 피격 후 무적의 남은 시간 */
+	float HitInvincibleRemaining = 0.f;
 
 private:
 	UPROPERTY()

@@ -5,6 +5,9 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "ProjectMetrush/Character/Player/PMPlayer.h"
+#include "ProjectMetrush/Component/PMStatComponent.h"
 
 UPMCombatComponent::UPMCombatComponent()
 {
@@ -40,6 +43,10 @@ void UPMCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	StateElapsedTime += DeltaTime;
+	if (HitInvincibleRemaining > 0.f)
+	{
+		HitInvincibleRemaining -= DeltaTime;
+	}
 
 	switch (CombatState)
 	{
@@ -48,6 +55,9 @@ void UPMCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		break;
 	case EPMCombatState::Dodge:
 		UpdateDodge(DeltaTime);
+		break;
+	case EPMCombatState::Hit:
+		UpdateHit(DeltaTime);
 		break;
 	default:
 		break;
@@ -161,12 +171,55 @@ void UPMCombatComponent::PerformAttackTrace()
 
 		if (CosAngle >= FMath::Cos(FMath::DegreesToRadians(Data.HalfAngleDeg)))
 		{
-			// TODO: GAS 도입 후 여기서 데미지 GE 적용 (Data.Damage)
-			if (GEngine)
+			float FinalDamage = Data.Damage;
+
+			const UPMStatComponent* Stat = OwnerCharacter->FindComponentByClass<UPMStatComponent>();
+			if (Stat)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-					FString::Printf(TEXT("HIT: %s (%.0f dmg)"), *Target->GetName(), Data.Damage));
+				// A004 마지막 일격: 콤보 마지막 타(3타)의 피해 증가
+				if (ComboIndex == AttackDataList.Num())
+				{
+					FinalDamage *= 1.f + Stat->GetEffectValue(EPMAugmentEffect::FinalHitDamage);
+				}
+
+				// A035 혈투: HP 50% 이하부터 잃은 체력에 선형 비례해 피해 증가 (기획서 14.7)
+				if (const APMPlayer* Player = Cast<APMPlayer>(OwnerCharacter))
+				{
+					const float HPRatio = Player->GetHPRatio();
+					if (HPRatio < 0.5f)
+					{
+						const float MaxBonus = Stat->GetEffectValue(EPMAugmentEffect::LowHPDamage);
+						FinalDamage *= 1.f + MaxBonus * (1.f - HPRatio / 0.5f);
+					}
+				}
+
+				// A014 공격적 회피: 저스트 회피 후 첫 공격 강화 (1회 소비)
+				if (bJustDodgeAttackReady)
+				{
+					if (GetWorld()->GetTimeSeconds() <= JustDodgeBuffExpireTime)
+					{
+						float BuffValue = Stat->GetEffectValue(EPMAugmentEffect::JustDodgeFirstAttack);
+
+						// S005 시간 반격: A013 감속이 유지되는 동안이면 1.5배 (기획서 15장)
+						const bool bSynergy = Stat->HasEffect(EPMAugmentEffect::JustDodgeEnemySlow)
+							&& GetWorld()->GetTimeSeconds() <= EnemySlowEndTime;
+						if (bSynergy)
+						{
+							BuffValue *= 1.5f;
+							if (GEngine)
+							{
+								GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Magenta, TEXT("시너지: 시간 반격!"));
+							}
+						}
+
+						FinalDamage *= 1.f + BuffValue;
+					}
+					bJustDodgeAttackReady = false; // 만료됐든 적중했든 1회로 소멸
+				}
 			}
+
+			UGameplayStatics::ApplyDamage(Target, FinalDamage,
+				OwnerCharacter->GetController(), OwnerCharacter, nullptr);
 		}
 	}
 }
@@ -262,5 +315,129 @@ void UPMCombatComponent::EndDodge()
 				bDodgeOnCooldown = false;
 				CurrentDodgeCount = 0;
 			}, DodgeCooldown, false);
+	}
+}
+
+// 피격/사망 ---------------------------------------------------------------
+
+void UPMCombatComponent::EnterHit(float StaggerDuration)
+{
+	if (CombatState == EPMCombatState::Dead)
+	{
+		return;
+	}
+
+	// 진행 중이던 공격/회피를 중단하고 피격 상태로 (기획서 11.2: 피격이 행동보다 우선)
+	CombatState = EPMCombatState::Hit;
+	StateElapsedTime = 0.f;
+	ComboIndex = 0;
+	bAttackBuffered = false;
+	bIsInvincible = false;
+
+	CurrentHitStagger = StaggerDuration;
+	HitInvincibleRemaining = HitInvincibleDuration;
+
+	// 피격 순간 이동 정지
+	OwnerCharacter->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Orange, TEXT("PLAYER HIT"));
+	}
+}
+
+void UPMCombatComponent::UpdateHit(float DeltaTime)
+{
+	// 경직이 끝나면 자유 상태로 복귀
+	if (StateElapsedTime >= CurrentHitStagger)
+	{
+		CombatState = EPMCombatState::None;
+		StateElapsedTime = 0.f;
+	}
+}
+
+void UPMCombatComponent::EnterDead()
+{
+	CombatState = EPMCombatState::Dead;
+	StateElapsedTime = 0.f;
+	bIsInvincible = false;
+
+	OwnerCharacter->GetCharacterMovement()->StopMovementImmediately();
+	OwnerCharacter->GetCharacterMovement()->DisableMovement();
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("PLAYER DEAD"));
+	}
+}
+
+// 증강 -------------------------------------------------------------------
+
+void UPMCombatComponent::NotifyJustDodge()
+{
+	const UPMStatComponent* Stat = OwnerCharacter->FindComponentByClass<UPMStatComponent>();
+	if (!Stat)
+	{
+		return;
+	}
+
+	const float Now = GetWorld()->GetTimeSeconds();
+
+	// A016 회피 충전: 쿨타임 중이면 즉시 해제 (프로토타입 단순화: % 회복 대신 전액 회복)
+	if (Stat->HasEffect(EPMAugmentEffect::JustDodgeCooldownRefund) && bDodgeOnCooldown)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(DodgeCooldownTimerHandle);
+		bDodgeOnCooldown = false;
+		CurrentDodgeCount = 0;
+	}
+
+	// A014 공격적 회피: 다음 첫 공격 강화 예약 (3초 유효)
+	if (Stat->HasEffect(EPMAugmentEffect::JustDodgeFirstAttack))
+	{
+		bJustDodgeAttackReady = true;
+		JustDodgeBuffExpireTime = Now + JustDodgeBuffWindow;
+	}
+
+	// A013 완벽 회피: 주변 적 감속
+	const float SlowAmount = Stat->GetEffectValue(EPMAugmentEffect::JustDodgeEnemySlow);
+	if (SlowAmount > 0.f)
+	{
+		ApplyEnemySlow(SlowAmount);
+		EnemySlowEndTime = Now + EnemySlowDuration;
+	}
+}
+
+void UPMCombatComponent::ApplyEnemySlow(float SlowAmount)
+{
+	// 화면 부근의 모든 적을 감속. CustomTimeDilation = 액터 개별 시간 배속 (0.7 = 30% 감속)
+	TArray<AActor*> Enemies;
+	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), OwnerCharacter->GetActorLocation(), 1500.f,
+		{ UEngineTypes::ConvertToObjectType(ECC_Pawn) }, ACharacter::StaticClass(),
+		{ OwnerCharacter }, Enemies);
+
+	for (AActor* Enemy : Enemies)
+	{
+		Enemy->CustomTimeDilation = 1.f - SlowAmount;
+	}
+
+	// 지속 시간 후 원복. 새 저스트가 오면 타이머가 갱신되어 연장됨
+	FTimerDelegate RestoreDelegate;
+	RestoreDelegate.BindLambda([this]()
+		{
+			TArray<AActor*> AllEnemies;
+			UKismetSystemLibrary::SphereOverlapActors(GetWorld(), OwnerCharacter->GetActorLocation(), 3000.f,
+				{ UEngineTypes::ConvertToObjectType(ECC_Pawn) }, ACharacter::StaticClass(),
+				{ OwnerCharacter }, AllEnemies);
+			for (AActor* Enemy : AllEnemies)
+			{
+				Enemy->CustomTimeDilation = 1.f;
+			}
+		});
+	GetWorld()->GetTimerManager().SetTimer(EnemySlowTimerHandle, RestoreDelegate, EnemySlowDuration, false);
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Magenta,
+			FString::Printf(TEXT("완벽 회피! 적 %d체 감속"), Enemies.Num()));
 	}
 }

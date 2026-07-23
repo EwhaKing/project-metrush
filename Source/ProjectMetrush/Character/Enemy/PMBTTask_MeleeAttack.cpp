@@ -98,8 +98,9 @@ void UPMBTTask_MeleeAttack::DoHitCheck(UBehaviorTreeComponent& OwnerComp)
         return;
     }
 
-    // 추후 조정필요 : 플레이어 피격 처리
-    UE_LOG(LogTemp, Log, TEXT("Player Hit"));
+    // 피해 전달. 무적/저스트 판단은 플레이어 TakeDamage가 일괄 처리
+    UGameplayStatics::ApplyDamage(PlayerPawn, Damage,
+        AIController, ControlledPawn, nullptr);
 }
 
 void UPMBTTask_MeleeAttack::ResetTelegraph(UBehaviorTreeComponent& OwnerComp)

@@ -5,6 +5,10 @@
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/Engine.h"
+#include "ProjectMetrush/Component/PMStatComponent.h"
+
 
 APMPlayer::APMPlayer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -39,11 +43,13 @@ APMPlayer::APMPlayer(const FObjectInitializer& ObjectInitializer)
 	CameraComponent->SetupAttachment(SpringArmComponent);
 
 	CombatComponent = CreateDefaultSubobject<UPMCombatComponent>(TEXT("CombatComponent"));
+	StatComponent = CreateDefaultSubobject<UPMStatComponent>(TEXT("StatComponent"));
 }
 
 void APMPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+	CurrentHP = MaxHP;
 
 	LastMoveDirection = GetActorForwardVector();
 
@@ -105,4 +111,65 @@ void APMPlayer::Input_Dodge(const FInputActionValue& InputActionValue)
 void APMPlayer::Input_Attack(const FInputActionValue& InputActionValue)
 {
 	CombatComponent->TryAttack(LastMoveDirection);
+}
+
+float APMPlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+	AController* EventInstigator, AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (CombatComponent->GetCombatState() == EPMCombatState::Dead || ActualDamage <= 0.f)
+	{
+		return 0.f;
+	}
+
+	// 무적 판단은 전부 여기서: 공격자는 그냥 ApplyDamage만 호출하면 됨
+	if (CombatComponent->IsInvincible())
+	{
+		if (CombatComponent->GetCombatState() == EPMCombatState::Dodge)
+		{
+			CombatComponent->NotifyJustDodge();
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, TEXT("JUST DODGE!"));
+			}
+		}
+		return 0.f;
+	}
+
+	CurrentHP -= ActualDamage;
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
+			FString::Printf(TEXT("Player HP: %.0f / %.0f"), CurrentHP, MaxHP));
+	}
+
+	if (CurrentHP <= 0.f)
+	{
+		Die();
+		return ActualDamage;
+	}
+
+	CombatComponent->EnterHit(0.1f); // 소피격. 대피격(0.4초) 구분은 추후
+	return ActualDamage;
+}
+
+void APMPlayer::Die()
+{
+	CurrentHP = 0.f;
+	CombatComponent->EnterDead();
+	// TODO: 사망 연출, 결과 화면, 런 재시작 (레벨 흐름 작업에서)
+}
+
+void APMPlayer::AddAugment(FName RowName)
+{
+	if (!AugmentTable)
+	{
+		return;
+	}
+
+	if (const FPMAugmentData* Row = AugmentTable->FindRow<FPMAugmentData>(RowName, TEXT("AddAugment")))
+	{
+		StatComponent->AcquireAugment(RowName, *Row);
+	}
 }
