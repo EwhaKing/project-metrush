@@ -41,8 +41,8 @@ private:
     /** 슬롯 종류별 최대 개수 */
     int32 GetCapacity(EPMAttackSlotType SlotType) const;
 
-    /** 현재 슬롯 사용량 */
-    void ShowDebug(EPMAttackSlotType SlotType);
+    /** 현재 슬롯 사용량 로그 */
+	void LogSlotStatus(EPMAttackSlotType SlotType);
 
     // Slot Variable
 private:

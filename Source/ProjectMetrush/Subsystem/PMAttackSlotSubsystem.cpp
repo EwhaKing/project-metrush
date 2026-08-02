@@ -1,9 +1,9 @@
 #include "PMAttackSlotSubsystem.h"
-#include "Engine/Engine.h"
 
 int32 UPMAttackSlotSubsystem::GetCapacity(EPMAttackSlotType SlotType) const
 {
     // 몬스터 수
+    // 추후 조정필요 : 동시에 공격할 수 있는 몬스터 수, 난이도에 직결되는 값
     switch (SlotType)
     {
     case EPMAttackSlotType::Melee:      return 3;
@@ -25,6 +25,7 @@ void UPMAttackSlotSubsystem::CleanUp(EPMAttackSlotType SlotType)
     });
 
     // 사망했거나 3초 넘게 재요청이 없는 대기 몬스터 제거
+    // 추후 조정필요 : 대기열 만료 시간 3초가 하드코딩, 변수로 뺄지 결정 필요
     Waiters.FindOrAdd(SlotType).RemoveAll([WorldTime](const FPMSlotWaiter& Waiter)
     {
         return Waiter.Actor.IsValid() == false || WorldTime - Waiter.LastAskTime > 3.0f;
@@ -85,7 +86,7 @@ bool UPMAttackSlotSubsystem::TryAcquireSlot(EPMAttackSlotType SlotType, AActor* 
     // 획득: 대기열에서 빼고 보유자로 등록
     TypeWaiters.RemoveAt(MyIndex);
     TypeHolders.Add(Requester);
-    ShowDebug(SlotType);
+    LogSlotStatus(SlotType);
     return true;
 }
 
@@ -97,16 +98,11 @@ void UPMAttackSlotSubsystem::ReleaseSlot(EPMAttackSlotType SlotType, AActor* Req
     }
 
     Holders.FindOrAdd(SlotType).Remove(Requester);
-    ShowDebug(SlotType);
+    LogSlotStatus(SlotType);
 }
 
-void UPMAttackSlotSubsystem::ShowDebug(EPMAttackSlotType SlotType)
+void UPMAttackSlotSubsystem::LogSlotStatus(EPMAttackSlotType SlotType)
 {
-    if (GEngine == nullptr)
-    {
-        return;
-    }
-
     const TCHAR* SlotName = TEXT("");
     switch (SlotType)
     {
@@ -116,9 +112,8 @@ void UPMAttackSlotSubsystem::ShowDebug(EPMAttackSlotType SlotType)
     case EPMAttackSlotType::Heal:       SlotName = TEXT("Heal");   break;
     }
 
-    GEngine->AddOnScreenDebugMessage(100 + static_cast<int32>(SlotType), 9999.f, FColor::Cyan,
-        FString::Printf(TEXT("%s Slot: %d / %d"), SlotName,
-            Holders.FindOrAdd(SlotType).Num(), GetCapacity(SlotType)));
+    UE_LOG(LogTemp, Log, TEXT("%s Slot: %d / %d"), SlotName,
+        Holders.FindOrAdd(SlotType).Num(), GetCapacity(SlotType));
 }
 
 bool UPMAttackSlotSubsystem::IsHolding(EPMAttackSlotType SlotType, AActor* Actor) const

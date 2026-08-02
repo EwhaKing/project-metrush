@@ -18,19 +18,19 @@ protected:
 
     // Variable
 protected:
-    /** 플레이어 인지 범위 */
+    /** 플레이어 인지 범위 -> 추후 조정필요 : 전투 방 크기 확정 후 조정, 시야각 없이 거리로만 인지 중 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float DetectRadius = 1000.0f;
 
-    /** 시야 잃은 후 추격 종료 시간 */
+    /** 시야 잃은 후 추격 종료 시간 -> 추후 조정필요 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float LoseSightTime = 3.0f;
 
-    /** 시작 위치 기준 추격 종료 거리 */
+    /** 시작 위치 기준 추격 종료 거리 -> 추후 조정필요 : 방을 벗어나 따라오지 않도록 방 크기와 맞춰야 함 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float MaxChaseDistance = 2000.0f;
 
-    /** 경로 탐색 실패 시간 */
+    /** 경로 탐색 실패 시간 -> 추후 조정필요 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float PathFailTime = 2.0f;
 

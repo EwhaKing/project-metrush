@@ -42,19 +42,19 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     EPMAttackSlotType SlotType = EPMAttackSlotType::Ranged;
 
-    /** 조준 시간 */
+    /** 조준 시간 -> 추후 조정필요 : 플레이어가 엄폐/회피할 수 있는 시간인지 검증 필요 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float AimTime = 0.8f;
 
-    /** 재장전 시간 */
+    /** 재장전 시간 -> 추후 조정필요 : 원거리형 연사 간격 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float ReloadTime = 1.f;
 
-    /** 유효 사거리 최소 */
+    /** 유효 사거리 최소 -> 추후 조정필요 : 전투 방 크기 확정 후 조정 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float MinRange = 600.f;
 
-    /** 유효 사거리 최대 */
+    /** 유효 사거리 최대 -> 추후 조정필요 : 전투 방 크기 확정 후 조정 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float MaxRange = 1100.f;
 
@@ -70,7 +70,7 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     FLinearColor NormalColor = FLinearColor::White;
 
-    /** 발사 직전 방향 고정 시간 */
+    /** 발사 직전 방향 고정 시간 -> 추후 조정필요 : 이 시간 안에 움직이면 회피 성공, 회피 난이도 결정값 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float AimLockTime = 0.2f;
 

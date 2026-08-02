@@ -25,6 +25,12 @@ EBTNodeResult::Type UPMBTTask_RangedAttack::ExecuteTask(UBehaviorTreeComponent& 
         return EBTNodeResult::Failed;
     }
 
+    // 스폰 직후에는 공격하지 않음
+    if (Enemy->CanAttack() == false)
+    {
+        return EBTNodeResult::Failed;
+    }
+
     ElapsedTime = 0.f;
     bFired = false;
     bHasSlot = false;
@@ -96,6 +102,7 @@ void UPMBTTask_RangedAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* 
             ? LineStart + LockedDirection * MaxRange
             : PlayerPawn->GetActorLocation();
         const float Thickness = bDirectionLocked ? 5.f : 1.5f;
+        // 추후 조정필요 : 조준선 디버그 표시를 실제 조준 이펙트로 교체
         DrawDebugLine(OwnerComp.GetWorld(), LineStart, LineEnd, FColor::Orange, false, -1.f, 0, Thickness);
 
         // 조준 완료 -> 발사
@@ -140,6 +147,7 @@ void UPMBTTask_RangedAttack::FireProjectile(UBehaviorTreeComponent& OwnerComp)
         : (PlayerPawn->GetActorLocation() - ControlledPawn->GetActorLocation()).GetSafeNormal();
 
     // 캡슐과 겹치지 않게 몸 앞 1m 지점에서 생성
+    // 추후 조정필요 : 몬스터 메시/무기 도입 후 발사 소켓 위치로 교체
     const FVector SpawnLocation = ControlledPawn->GetActorLocation() + FireDirection * 100.f;
 
     FActorSpawnParameters SpawnParams;

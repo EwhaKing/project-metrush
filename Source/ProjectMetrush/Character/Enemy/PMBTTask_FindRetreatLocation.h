@@ -18,11 +18,11 @@ protected:
 
     // Variable
 protected:
-    /** 후퇴 시작 거리 */
+    /** 후퇴 시작 거리 -> 추후 조정필요 : 원거리형이 근접을 허용하는 거리 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float RetreatTriggerRange = 300.f;
 
-    /** 후방 이동 거리 */
+    /** 후방 이동 거리 -> 추후 조정필요 : 짧으면 계속 후퇴만 반복함 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float RetreatDistance = 250.f;
 };

@@ -18,7 +18,7 @@ protected:
 
     // Variable
 protected:
-    /** 목표 사격 거리 */
+    /** 목표 사격 거리 -> 추후 조정필요 : RangedAttack의 MinRange~MaxRange 사이 값을 유지해야 함 */
     UPROPERTY(EditAnywhere, Category = "Variable|AI")
     float FireDistance = 850.f;
 };

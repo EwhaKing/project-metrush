@@ -10,7 +10,7 @@ APMProjectile::APMProjectile()
 
     // 충돌 구체: 벽은 막히고, 폰과는 겹침
     SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
-    SphereComponent->InitSphereRadius(15.f);
+    SphereComponent->InitSphereRadius(15.f);      // 추후 조정필요 : 투사체 충돌 반경, 회피 난이도에 영향
     SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     SphereComponent->SetCollisionObjectType(ECC_WorldDynamic);
     SphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);

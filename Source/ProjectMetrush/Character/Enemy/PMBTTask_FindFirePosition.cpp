@@ -31,6 +31,7 @@ EBTNodeResult::Type UPMBTTask_FindFirePosition::ExecuteTask(UBehaviorTreeCompone
     }
 
     // 현재 방향을 우선 시도, 시야 막히면 좌우로 틀며 플레이어를 찾음
+    // 추후 조정필요 : 후보 각도 개수/간격, 넓히면 자리를 잘 찾지만 매 탐색 비용이 늘어남
     const float CandidateAngles[] = { 0.f, 35.f, -35.f, 70.f, -70.f };
 
     FVector FallbackLocation = FVector::ZeroVector;

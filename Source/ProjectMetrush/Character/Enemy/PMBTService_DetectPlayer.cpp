@@ -60,6 +60,7 @@ void UPMBTService_DetectPlayer::TickNode(UBehaviorTreeComponent& OwnerComp, uint
     }
 
     // 추격 종료 조건 2 : 경로 탐색 실패 2초 지속
+    // 추후 조정필요 : 몬스터마다 0.2초 간격으로 동기 경로탐색 -> 몬스터가 많아지면 프레임 저하, 간격 조절 필요
     UNavigationPath* PathToPlayer = UNavigationSystemV1::FindPathToLocationSynchronously(
         OwnerComp.GetWorld(), ControlledPawn->GetActorLocation(), PlayerPawn->GetActorLocation(), ControlledPawn);
     const bool bHasPath = PathToPlayer != nullptr && PathToPlayer->IsValid() && !PathToPlayer->IsPartial();

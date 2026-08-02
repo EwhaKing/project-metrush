@@ -24,4 +24,10 @@ namespace PMBlackboardKeys
 
     /** 원거리형 후퇴 위치 */
     inline const FName RetreatLocation = TEXT("RetreatLocation");
+
+    /** 방패형 위치 */
+    inline const FName GuardPosition = TEXT("GuardPosition");
+
+    /** 힐러형 회복 대상 */
+    inline const FName HealTarget = TEXT("HealTarget");
 }

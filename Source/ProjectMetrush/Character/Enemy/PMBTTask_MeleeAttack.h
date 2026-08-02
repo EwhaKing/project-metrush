@@ -40,15 +40,15 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     EPMAttackSlotType SlotType = EPMAttackSlotType::Melee;
 
-    /** 텔레그래프 시간 */
+    /** 텔레그래프 시간 -> 추후 조정필요 : 플레이어 패링/회피 입력 창과 맞춰야 함 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float PrepareTime = 0.5f;
 
-    /** 공격 판정 종료 후 다음 행동까지 */
+    /** 공격 판정 종료 후 다음 행동까지 -> 추후 조정필요 : 반격 가능 시간 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float AfterDelayTime = 0.7f;
 
-    /** 공격 판정 거리 */
+    /** 공격 판정 거리 -> 추후 조정필요 : 몬스터 실제 크기/무기 리치 확정 후 조정 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float HitRange = 180.f;
 
