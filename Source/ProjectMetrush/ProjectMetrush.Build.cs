@@ -18,7 +18,6 @@ public class ProjectMetrush : ModuleRules
 			"AIModule",
 			"NavigationSystem",
 			"UMG",
-			"StateTreeModule",
 			"GameplayTasks"
 		});
 

@@ -52,6 +52,10 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     float HitRange = 180.f;
 
+    /** 공격 피해량 */
+    UPROPERTY(EditAnywhere, Category = "Variable|Attack")
+    float Damage = 10.f;
+
     /** 텔레그래프 색 -> 추후 조정필요 */
     UPROPERTY(EditAnywhere, Category = "Variable|Attack")
     FLinearColor TelegraphColor = FLinearColor::Red;
